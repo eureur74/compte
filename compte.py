@@ -46,7 +46,6 @@ def mois_en_nombre(mois):
 
 # Liste des catégories
 categories = ["Nourriture", "Vie quotidienne", "Santé", "Loisir", "Vêtement", "Transport", "Coiffeur", "Épargne"]
-# budget = [212,30,20,30,30,84,12,0]
 
 # Liste des mois et des catégories
 lMois = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
@@ -204,7 +203,7 @@ def calculTotal():
     for item in table.get_children():
         try :
             values = table.item(item, 'values')
-            if float(values[9]) > 0 : 
+            if float(values[len(categoriess)-1]) > 0 : 
                 current_tags = table.item(item, 'tags')
                 table.item(item, tags="green")
             else :
@@ -301,14 +300,11 @@ def update_totals():
     for item in table.get_children():
         try :
             values = table.item(item, 'values')
-            # print(values[9])
-            if float(values[9]) > 0 :  # Supposons que le nom est dans la première colonne
+            if float(values[len(categoriess)-1]) > 0 :  # Supposons que le nom est dans la première colonne
                 current_tags = table.item(item, 'tags')
-                # new_tags = tuple(set(current_tags) | {"gree"})
                 table.item(item, tags="green")
             else :
                 current_tags = table.item(item, 'tags')
-                # new_tags = tuple(set(current_tags) | {"gree"})
                 table.item(item, tags="red")
         except ValueError:
             messagebox.showerror("Erreur de calcul", f"Impossible de bien mettre les couleurs")
@@ -335,7 +331,6 @@ def delete_expense():
                     priceFloat = eval(row[2])
                 else:
                     priceFloat = float(row[2])
-                # print(row[2])
                 if row[0] != name or row[1] != date or float(price) != priceFloat  or row[3] != category or row[4] != description:
                     writer.writerow(row)
         
@@ -352,7 +347,6 @@ def show_expense():
     if selected_item:
         # Récupérer les valeurs de la dépense sélectionnée
         item_values = expenses_table.item(selected_item, "values")
-        # print(item_values)
         try:
             name = item_values[0]
             date = item_values[1]
@@ -367,7 +361,6 @@ def show_expense():
                     priceFloat = eval(row[2])
                 else:
                     priceFloat = float(row[2])
-                # print(price)
                 if row[0] == name and row[1] == date and float(price) == priceFloat  and row[3] == category and row[4] == description:
                     price = row[2]
                     break
@@ -411,7 +404,6 @@ def edit_expense():
         with open(CSV_FILE, mode='w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
             for row in rows:
-                print(row)
                 if row[0] != name or row[1] != date or row[2] != price or row[3] != category or row[4] != description:
                     writer.writerow(row)
         
@@ -435,8 +427,6 @@ root.update_idletasks()
 root.state('zoomed')
 max_width = root.winfo_screenwidth()
 max_height = root.winfo_screenheight()
-# root.geometry(str(max_width)+'x'+str(max_height))
-# print(f"Largeur: {width}, Hauteur: {height}")
 
 
 # Variables pour les champs d'entrée
