@@ -8,10 +8,13 @@ from tkinter import messagebox
 
 import option # type: ignore
 
+# Chemin de base pour les fichiers de sauvegarde
+BASE_SAVE_PATH = ""
+
 # Chemin du fichier CSV
-CSV_FILE = "save/expenses.csv"
-CSV_FILE_BUDGET = 'save/budget_mensuel.csv'
-CSV_FILE_OPTION = 'save/option.txt'
+CSV_FILE = BASE_SAVE_PATH + "saveCompte/expenses.csv"
+CSV_FILE_BUDGET = BASE_SAVE_PATH + 'saveCompte/budget_mensuel.csv'
+CSV_FILE_OPTION = BASE_SAVE_PATH + 'saveCompte/option.txt'
 enCoursEdition = False
 
 if not os.path.exists(CSV_FILE_BUDGET):
@@ -21,6 +24,50 @@ if not os.path.exists(CSV_FILE_BUDGET):
 options = {"couleur_Nourriture" :"#FFC0CB","couleur_Vie quotidienne" :"#008080","couleur_Santé" :"#b92020","couleur_Loisir" :"#800080","couleur_Vêtement" :"#20b7b9","couleur_Transport" :"#808080","couleur_Coiffeur" :"#A52A2A","couleur_Épargne" :"#008000"}
 
 options = option.recuperer_options_avec_creation(CSV_FILE_OPTION, options)
+
+def update_file_paths():
+    """Met à jour les chemins des fichiers CSV avec le nouveau chemin de base"""
+    global CSV_FILE, CSV_FILE_BUDGET, CSV_FILE_OPTION
+    CSV_FILE = BASE_SAVE_PATH + "saveCompte/expenses.csv"
+    CSV_FILE_BUDGET = BASE_SAVE_PATH + 'saveCompte/budget_mensuel.csv'
+    CSV_FILE_OPTION = BASE_SAVE_PATH + 'saveCompte/option.txt'
+    
+    # Créer le répertoire s'il n'existe pas
+    save_dir = os.path.dirname(CSV_FILE)
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    
+    # Créer le fichier budget s'il n'existe pas
+    if not os.path.exists(CSV_FILE_BUDGET):
+        with open(CSV_FILE_BUDGET, 'w', newline='') as csvfile:
+            print('creating budget file')
+
+def change_save_path():
+    """Ouvre une boîte de dialogue pour changer le chemin de base"""
+    from tkinter import filedialog
+    global BASE_SAVE_PATH
+    
+    new_path = filedialog.askdirectory(title="Choisir le répertoire de base pour les sauvegardes")
+    if new_path:
+        # Ajouter un séparateur de chemin à la fin si nécessaire
+        if not new_path.endswith(os.sep):
+            new_path += os.sep
+        
+        BASE_SAVE_PATH = new_path
+        update_file_paths()
+        
+        # Recharger les options depuis le nouveau chemin
+        global options
+        options = option.recuperer_options_avec_creation(CSV_FILE_OPTION, options)
+        
+        # Recharger les dépenses
+        load_expenses()
+        calculTotal()
+        
+        messagebox.showinfo("Chemin modifié", f"Le nouveau chemin de base est: {BASE_SAVE_PATH}")
+
+# Initialiser les chemins au démarrage
+update_file_paths()
 
 def mois_en_nombre(mois):
     mois_dict = {
@@ -55,7 +102,7 @@ categoriess = ['Mois','Nourriture', 'Vie quotidienne', 'Santé', 'Loisir', 'Vêt
 months = ["Tous", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
 years = ["Tous", "2022", "2023", "2024","2025"]  # Mettre à jour avec les années disponibles dans votre CSV
 
-directory_path = Path('save')
+directory_path = Path(f'{BASE_SAVE_PATH}saveCompte')
 
 if not directory_path.exists():
     directory_path.mkdir(parents=True, exist_ok=False)
@@ -200,6 +247,28 @@ def calculTotal():
         table.delete("Total")
     table.insert('', 'end', iid="Total", values=totalList)
 
+    totalActuelList = ["Total actuel"]
+    for i in range(1,len(categoriess)) :
+        somme = 0
+        for item in table.get_children():
+        
+            row = table.item(item)['values']
+        
+            try :
+                if row[0] != "Total" and row[0] != "Total actuel":
+                    if str(current_date_time.year) == str(year_var.get()) :
+                        if int(current_date_time.month) >= int(mois_en_nombre(row[0])):
+                            somme += float(row[i])
+            except ValueError:
+                messagebox.showerror("Erreur de calcul", f"Impossible de faire le calcul du total annuel ")            
+        totalActuelList.append(round( somme,2))
+
+    if "Total actuel" in table.get_children():
+        table.delete("Total actuel")
+
+    if str(current_date_time.year) == str(year_var.get()) :
+        table.insert('', 'end', iid="Total actuel", values=totalActuelList)
+
     for item in table.get_children():
         try :
             values = table.item(item, 'values')
@@ -252,6 +321,7 @@ def load_expenses():
 
     trier_colonne(expenses_table, "Date", "date")
     update_totals()
+    calculTotal()
 
 # Fonction pour effacer le tableau des dépenses
 def clear_table():
@@ -535,6 +605,9 @@ submit_button.grid(row=1, column=0)
 submit_button = ttk.Button(editFrame, text="Modifier / Dupliquer", command=lambda: (stopEdition(), show_expense()) if enCoursEdition else show_expense())
 submit_button.grid(row=1, column=1)
 
+change_path_button = ttk.Button(root, text="Changer chemin", command=change_save_path)
+change_path_button.grid(row=100, column=100, sticky="se", padx=20, pady=20)
+
 
 
 
@@ -728,6 +801,7 @@ def updateBudget():
         # entry.setvar = 12
         entry.insert(0,budgets[category])
         entries[category] = entry
+    
 updateBudget()
 # Bouton pour valider les budgets
 
@@ -799,24 +873,24 @@ def reload():
 reload()
 
 
-totalActuelList = ["Total actuel"]
-for i in range(1,len(categoriess)) :
-    somme = 0
-    for item in table.get_children():
+# totalActuelList = ["Total actuel"]
+# for i in range(1,len(categoriess)) :
+#     somme = 0
+#     for item in table.get_children():
         
-        row = table.item(item)['values']
+#         row = table.item(item)['values']
         
-        try :
-            if str(current_date_time.year) == str(year_var.get()) :
-                if int(current_date_time.month) >= int(mois_en_nombre(row[0])):
-                    somme += float(row[i])
-        except ValueError:
-            messagebox.showerror("Erreur de calcul", f"Impossible de faire le calcul du total annuel ")
+#         try :
+#             if str(current_date_time.year) == str(year_var.get()) :
+#                 if int(current_date_time.month) >= int(mois_en_nombre(row[0])):
+#                     somme += float(row[i])
+#         except ValueError:
+#             messagebox.showerror("Erreur de calcul", f"Impossible de faire le calcul du total annuel ")
                     
-    totalActuelList.append(round( somme,2))
+#     totalActuelList.append(round( somme,2))
 
-if str(current_date_time.year) == str(year_var.get()) :
-    table.insert('', 'end', iid="Total actuel", values=totalActuelList)
+# if str(current_date_time.year) == str(year_var.get()) :
+#     table.insert('', 'end', iid="Total actuel", values=totalActuelList)
     
 
 calculTotal()

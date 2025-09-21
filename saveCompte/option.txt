@@ -1,0 +1,8 @@
+couleur_Nourriture,#FFC0CB
+couleur_Vie quotidienne,#008080
+couleur_Santé,#b92020
+couleur_Loisir,#800080
+couleur_Vêtement,#20b7b9
+couleur_Transport,#808080
+couleur_Coiffeur,#A52A2A
+couleur_Épargne,#008000
